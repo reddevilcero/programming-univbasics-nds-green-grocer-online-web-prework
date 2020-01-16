@@ -42,24 +42,29 @@ def apply_coupons(cart, coupons)
   # REMEMBER: This method **should** update cart
   coupons.each { |item_with_coupon|
     found_item = find_item_by_name_in_collection(item_with_coupon[:item], cart)
-    if found_item
-      new_item = {
-        item: "#{item_with_coupon[:item]} W/COUPON",
-        count: item_with_coupon[:num],
-        price: item_with_coupon[:cost] / item_with_coupon[:num],
-        clearance: found_item[:clearance]
-      }
-      cart << new_item
-      found_item[:count] -= new_item[:count]
-    else
-      new_item = {
-        item: "#{item_with_coupon[:item]} W/COUPON",
-        count: item_with_coupon[:num],
-        price: item_with_coupon[:cost] / item_with_coupon[:num],
-        clearance: false
-      }
+    couponed_item_name = "#{item_with_coupon[:item]} W/COUPON"
+    cart_item_with_coupon = find_item_by_name_in_collection(couponed_item_name, cart)
+
+    if found_item && found_item[:count] >= item_with_coupon[:num]
+      if cart_item_with_coupon
+        cart_item_with_coupon[:count] += item_with_coupon[:num]
+        found_item[:count] -= item_with_coupon[:num]
+      else
+        cart_item_with_coupon = {
+            item: couponed_item_name,
+            count: item_with_coupon[:num],
+            price: item_with_coupon[:cost] / item_with_coupon[:num],
+            clearance: found_item[:clearance]
+        }
+        cart << cart_item_with_coupon
+        found_item[:count] -= item_with_coupon[:num]
+      end
     end
   }
+
+
+
+
 
  cart
 end
@@ -88,12 +93,10 @@ def checkout(cart, coupons)
   # BEFORE it begins the work of calculating the total (or else you might have
   # some irritated customers
   total = 0
- p cart
- p coupons
+
   consolidate_cart = consolidate_cart(cart)
   cart_with_coupons_applied = apply_coupons(consolidate_cart, coupons)
   final_cart = apply_clearance(cart_with_coupons_applied)
-  p final_cart
 
   final_cart.each { |element|
 
